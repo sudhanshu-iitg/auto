@@ -9,7 +9,9 @@ import time
 
 load_dotenv()
 
-
+NOTION_TOKEN = os.environ.get('NOTION_TOKEN')
+DATABASE_ID = os.environ.get('DATABASE_ID')
+SLACK_TOKEN = os.environ.get('SLACK_TOKEN')
 
 client = WebClient(token=SLACK_TOKEN)
 userId_dic = {}
