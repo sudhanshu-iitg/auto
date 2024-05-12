@@ -2,3 +2,4 @@ python-dotenv
 requests
 slack-sdk
 schedule
+gunicorn==19.7.1
