@@ -10,6 +10,7 @@ import time
 load_dotenv()
 
 
+
 client = WebClient(token=SLACK_TOKEN)
 userId_dic = {}
 channelId_dic = {}
