@@ -62,13 +62,15 @@ def send_tasks():
     for task, user_id, notion_page_id in tasks_and_user_ids:
         send_task(task, user_id, notion_page_id)
 
-def update_notion_reply(task, notion_page_id):
+def update_notion_reply(task, reply, notion_page_id,user_id):
     url = f"https://api.notion.com/v1/comments"
     response = requests.post(
         url,
         json={"parent": {"page_id": notion_page_id },"rich_text": [
-        {"text": {"content": task}}]},headers=headers
+        {"text": {"content": reply}}]},headers=headers
     )
+    userId_dic[task] = reply
+    channelId_dic[user_id] = reply
     
 
 def send_tasks_and_check_last_message():
@@ -87,7 +89,7 @@ def send_tasks_and_check_last_message():
                 last_message_ts = last_message.get("ts", "")
                 if conversation_id != last_message_ts:
                     # send_task(last_message_text, user_id, notion_page_id)
-                    update_notion_reply(last_message_text,notion_page_id)
+                    update_notion_reply(task, last_message_text,notion_page_id, user_id)
                 logger.info("{} messages found in {}".format(len(conversation_history), channel_id))
             except SlackApiError as e:
                 logger.error("Error creating conversation: {}".format(e))
