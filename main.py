@@ -76,18 +76,21 @@ def send_tasks_and_check_last_message():
     for task, user_id, notion_page_id in tasks_and_user_ids:
         channel_id = channelId_dic.get(user_id)
         conversation_id = userId_dic.get(task)
-        try:
-            result = client.conversations_replies(channel=channel_id, ts= conversation_id)
-            conversation_history = result["messages"]
-            last_message = conversation_history[-1]
-            last_message_text = last_message.get("text", "")
-            last_message_ts = last_message.get("ts", "")
-            if conversation_id != last_message_ts:
-                # send_task(last_message_text, user_id, notion_page_id)
-                update_notion_reply(last_message_text,notion_page_id)
-            logger.info("{} messages found in {}".format(len(conversation_history), channel_id))
-        except SlackApiError as e:
-            logger.error("Error creating conversation: {}".format(e))
+        if channel_id is None or conversation_id is None:
+            send_tasks()
+        else:
+            try:
+                result = client.conversations_replies(channel=channel_id, ts= conversation_id)
+                conversation_history = result["messages"]
+                last_message = conversation_history[-1]
+                last_message_text = last_message.get("text", "")
+                last_message_ts = last_message.get("ts", "")
+                if conversation_id != last_message_ts:
+                    # send_task(last_message_text, user_id, notion_page_id)
+                    update_notion_reply(last_message_text,notion_page_id)
+                logger.info("{} messages found in {}".format(len(conversation_history), channel_id))
+            except SlackApiError as e:
+                logger.error("Error creating conversation: {}".format(e))
 
 schedule.every().day.at("10:00").do(send_tasks)
 schedule.every().minute.do(send_tasks_and_check_last_message)
