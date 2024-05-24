@@ -69,8 +69,6 @@ def update_notion_reply(task, reply, notion_page_id,user_id):
         json={"parent": {"page_id": notion_page_id },"rich_text": [
         {"text": {"content": reply}}]},headers=headers
     )
-    userId_dic[task] = reply
-    channelId_dic[user_id] = reply
     
 
 def send_tasks_and_check_last_message():
@@ -79,7 +77,7 @@ def send_tasks_and_check_last_message():
         channel_id = channelId_dic.get(user_id)
         conversation_id = userId_dic.get(task)
         if channel_id is None or conversation_id is None:
-            send_tasks()
+            send_task(task, user_id, notion_page_id)
         else:
             try:
                 result = client.conversations_replies(channel=channel_id, ts= conversation_id)
@@ -90,12 +88,14 @@ def send_tasks_and_check_last_message():
                 if conversation_id != last_message_ts:
                     # send_task(last_message_text, user_id, notion_page_id)
                     update_notion_reply(task, last_message_text,notion_page_id, user_id)
+                    userId_dic[task] = last_message_ts
+                    channelId_dic[user_id] = channel_id
                 logger.info("{} messages found in {}".format(len(conversation_history), channel_id))
             except SlackApiError as e:
                 logger.error("Error creating conversation: {}".format(e))
 
-schedule.every().day.at("10:00").do(send_tasks)
-schedule.every().minute.do(send_tasks_and_check_last_message)
+# schedule.every().day.at("10:00").do(send_tasks)
+# schedule.every().minute.do(send_tasks_and_check_last_message)
 
 while True:
     schedule.run_pending()
