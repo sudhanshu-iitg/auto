@@ -3,4 +3,4 @@ requests
 slack-sdk
 schedule
 Flask
-GunFlask
+Gunicorn
