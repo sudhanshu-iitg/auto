@@ -5,7 +5,7 @@ from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 import logging
 # from main import send_tasks
-from file1 import send_tasks_1
+# from file1 import send_tasks_1
 
 NOTION_TOKEN = os.environ.get('NOTION_TOKEN')
 DATABASE_ID = os.environ.get('DATABASE_ID')
@@ -66,14 +66,28 @@ def webhook():
         # Process the data here
         if data.get("challenge") is not None:
             # send_tasks()
-            send_tasks_1()
+            # send_tasks_1()
             challenge = data.get("challenge")
             return challenge, 200
         else:
             # Handle other webhook events here
             print(f"Received webhook data: {data}")
+            send_task(data,"D072S7M51QE","abc")
             return jsonify({"message": "Webhook received!", "data": data}), 200
 
+@app.route('/status', methods=['POST'])
+def webhook():
+    if request.method == 'POST':
+        data = request.json
+        # Process the data here
+        if data.get("challenge") is not None:
+            # send_tasks_1()
+            challenge = data.get("challenge")
+            return challenge, 200
+        else:
+            # Handle other webhook events here
+            
+            return jsonify({"message": "Webhook received!", "data": data}), 200
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 4000))
     app.run(host='0.0.0.0', port=port)
