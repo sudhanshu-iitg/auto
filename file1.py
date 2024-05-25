@@ -97,6 +97,6 @@ def send_tasks_and_check_last_message():
 # schedule.every().day.at("10:00").do(send_tasks)
 # schedule.every().minute.do(send_tasks_and_check_last_message)
 
-while True:
-    schedule.run_pending()
-    time.sleep(60)
+# while True:
+#     schedule.run_pending()
+#     time.sleep(60)
