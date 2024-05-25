@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-
+from main import send_tasks
 app = Flask(__name__)
 
 @app.route('/webhook', methods=['POST'])
@@ -8,6 +8,7 @@ def webhook():
         data = request.json
         # Process the data here
         if data.get("challenge") is not None:
+            send_tasks()
             challenge = data.get("challenge")
             return challenge, 200
         else:
