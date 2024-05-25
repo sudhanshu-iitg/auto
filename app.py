@@ -5,7 +5,7 @@ from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 import logging
 # from main import send_tasks
-
+from file1 import send_tasks_1
 
 NOTION_TOKEN = os.environ.get('NOTION_TOKEN')
 DATABASE_ID = os.environ.get('DATABASE_ID')
@@ -66,7 +66,7 @@ def webhook():
         # Process the data here
         if data.get("challenge") is not None:
             # send_tasks()
-            send_tasks()
+            send_tasks_1()
             challenge = data.get("challenge")
             return challenge, 200
         else:

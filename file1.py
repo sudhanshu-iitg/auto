@@ -57,7 +57,7 @@ def send_task(task, user_id, notion_page_id):
         # )
 
 
-def send_tasks():
+def send_tasks_1():
     tasks_and_user_ids = get_tasks_and_user_ids()
     for task, user_id, notion_page_id in tasks_and_user_ids:
         send_task(task, user_id, notion_page_id)
