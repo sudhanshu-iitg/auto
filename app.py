@@ -76,7 +76,7 @@ def webhook():
             return jsonify({"message": "Webhook received!", "data": data}), 200
 
 @app.route('/slack', methods=['POST'])
-def webhook():
+def slack():
     if request.method == 'POST':
         data = request.json
         # Process the data here
