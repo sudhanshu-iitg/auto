@@ -65,8 +65,6 @@ def webhook():
         data = request.json
         # Process the data here
         if data.get("challenge") is not None:
-            # send_tasks()
-            # send_tasks_1()
             challenge = data.get("challenge")
             return challenge, 200
         else:
@@ -78,16 +76,17 @@ def webhook():
 @app.route('/slack', methods=['POST'])
 def slack():
     if request.method == 'POST':
-        data = request.json
+        data1 = request.json
         # Process the data here
-        if data.get("challenge") is not None:
+        if data1.get("challenge") is not None:
             # send_tasks_1()
-            challenge = data.get("challenge")
+            challenge = data1.get("challenge")
             return challenge, 200
         else:
             # Handle other webhook events here
             # send_task(str(data),"D072S7M51QE","abc")
-            return jsonify({"message": "Webhook received!", "data": data}), 200
+            response = requests.post("https://lynks-n8n.up.railway.app/webhook/77309760-6a8a-46ec-947d-910bfb8c2aff", data={"body":str(data1) })
+            return jsonify({"message": "Webhook received!", "data": data1}), 200
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 4000))
+    port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
