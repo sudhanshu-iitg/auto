@@ -88,8 +88,9 @@ def slack():
         else:
             # Handle other webhook events here
             # send_task(str(data),"D072S7M51QE","abc")
-            response = requests.post("https://smee.io/xK7FU4adUFN3EO8", data={"body":str(data1),"ts":data1["event"]["thread_ts"] })
-            # id = data1["event"]["thread_ts"]
+            id = notionId_dic.get(data1["event"]["thread_ts"], 'test')
+            response = requests.post("https://smee.io/xK7FU4adUFN3EO8", data={"body":str(data1),"id":id })
+            
             return jsonify({"message": "Webhook received !", "data": data1}), 200
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
