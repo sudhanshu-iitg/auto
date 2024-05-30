@@ -86,7 +86,7 @@ def slack():
             # Handle other webhook events here
             # send_task(str(data),"D072S7M51QE","abc")
             response = requests.post("https://lynks-n8n.up.railway.app/webhook/auto-task", data={"body":str(data1['event']['text']) })
-            return jsonify({"message": "Webhook received!", "data": data1}), 200
+            return jsonify({"message": "Webhook received !", "data": data1}), 200
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
