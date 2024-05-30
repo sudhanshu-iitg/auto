@@ -86,7 +86,7 @@ def slack():
         else:
             # Handle other webhook events here
             # send_task(str(data),"D072S7M51QE","abc")
-            response = requests.post("https://smee.io/xK7FU4adUFN3EO8", data={"body":str(data1['event']['text']) })
+            response = requests.post("https://smee.io/xK7FU4adUFN3EO8", data={"body":str(data1) })
             return jsonify({"message": "Webhook received !", "data": data1}), 200
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
