@@ -58,6 +58,14 @@ def send_tasks():
     for task, user_id, notion_page_id in tasks_and_user_ids:
         send_task(task, user_id, notion_page_id)
 
+def update_notion_reply(reply, notion_page_id):
+    url = f"https://api.notion.com/v1/comments"
+    response = requests.post(
+        url,
+        json={"parent": {"page_id": notion_page_id },"rich_text": [
+        {"text": {"content": reply}}]},headers=headers
+    )
+    
 
 app = Flask(__name__)
 
@@ -89,6 +97,8 @@ def slack():
             # Handle other webhook events here
             # send_task(str(data),"D072S7M51QE","abc")
             id = notionId_dic.get(data1["event"]["thread_ts"], 'test')
+            if id is not "test":
+                update_notion_reply(data1["event"]["text"],id)
             response = requests.post("https://smee.io/xK7FU4adUFN3EO8", data={"body":str(data1),"id":id })
             
             return jsonify({"message": "Webhook received !", "data": data1}), 200
