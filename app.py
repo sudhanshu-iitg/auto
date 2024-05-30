@@ -70,6 +70,7 @@ def webhook():
         else:
             # Handle other webhook events here
             print(f"Received webhook data: {data}")
+            send_tasks()
             
             return jsonify({"message": "Webhook received!", "data": data}), 200
 
