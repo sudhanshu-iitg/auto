@@ -44,6 +44,16 @@ def send_task(task, user_id, notion_page_id):
     userId_dic[task] = result["message"]["ts"]
     channelId_dic[user_id] = result["channel"]
     notionId_dic[result["message"]["ts"]] = notion_page_id
+
+def get_id_from_name(user_name):
+    url = f"https://slack.com/api/users.list"
+    response = requests.get(
+        url,
+        headers={"Authorization":SLACK_TOKEN}
+    )
+    for member in response.json()['members']:
+        if user_name in member['name'] :
+            return member['id']
         
         # url = f"https://api.notion.com/v1/pages/{notion_page_id}"
         # response = requests.patch(
