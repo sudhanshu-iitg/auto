@@ -4,6 +4,8 @@ import requests
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 import logging
+import schedule
+import time
 # from main import send_tasks
 # from file1 import send_tasks_1
 
@@ -129,3 +131,12 @@ def slack():
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
+
+# Schedule the send_tasks function to run at 11:10 every day
+schedule.every().day.at("11:10").do(send_tasks)
+
+# Run the scheduled tasks
+while True:
+    schedule.run_pending()
+    time.sleep(1)
+
