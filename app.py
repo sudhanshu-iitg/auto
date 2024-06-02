@@ -120,8 +120,8 @@ def slack():
         else:
             # Handle other webhook events here
             # send_task(str(data),"D072S7M51QE","abc")
-            id = notionId_dic.get(data1["event"]["thread_ts"], 'test')
-            if id is not "test":
+            if "thread_ts" in data1["event"]:
+                id = notionId_dic.get(data1["event"]["thread_ts"], 'test')
                 update_notion_reply(data1["event"]["text"],id)
             response = requests.post("https://smee.io/xK7FU4adUFN3EO8", data={"body":str(data1),"id":id })
             
