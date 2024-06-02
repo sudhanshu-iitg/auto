@@ -133,10 +133,10 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=port)
 
 # Schedule the send_tasks function to run at 11:10 every day
-schedule.every().day.at("11:10").do(send_tasks)
+schedule.every().day.at("23:30").do(send_tasks)
 
 # Run the scheduled tasks
 while True:
     schedule.run_pending()
-    time.sleep(1)
+    time.sleep(6000)
 
