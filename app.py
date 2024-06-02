@@ -31,7 +31,8 @@ def get_tasks_and_user_ids():
             (
                 task["properties"]["Task"]["title"][0]["text"]["content"],
                 task["properties"]['Task owner']['people'][0]['name'],
-                task["id"]
+                task["id"],
+                task["properties"]['Status']['select']['name']
             )
             for task in data["results"]
         ]
@@ -66,15 +67,16 @@ def get_id_from_name(user_name):
 def send_tasks():
     try:
         tasks_and_user_ids = get_tasks_and_user_ids()
-        for task, user_name, notion_page_id in tasks_and_user_ids:
-            user_id = get_id_from_name(user_name)
-            if user_name is None:
-                send_task("really fucked up", "U03GP4QD0MU", "19e80f31c3fb499ea1b01e96203fb72d")
-            else:
-                if user_id is None:
-                    send_task(f"Couldn't find the user -  {user_name}", "U03GP4QD0MU", "19e80f31c3fb499ea1b01e96203fb72d")
+        for task, user_name, notion_page_id, status in tasks_and_user_ids:
+            if status == 'in progress':
+                user_id = get_id_from_name(user_name)
+                if user_name is None:
+                    send_task("really fucked up", "U03GP4QD0MU", "19e80f31c3fb499ea1b01e96203fb72d")
                 else:
-                    send_task(task, user_id, notion_page_id)
+                    if user_id is None:
+                        send_task(f"Couldn't find the user -  {user_name}", "U03GP4QD0MU", "19e80f31c3fb499ea1b01e96203fb72d")
+                    else:
+                        send_task(task, user_id, notion_page_id)
             
             
             
