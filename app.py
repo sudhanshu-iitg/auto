@@ -73,8 +73,13 @@ def send_tasks():
         tasks_and_user_ids = get_tasks_and_user_ids()
         for task, user_name, notion_page_id in tasks_and_user_ids:
             user_id = get_id_from_name(user_name)
-            print(user_id)
-            send_task(task, user_id, notion_page_id)
+            if user_id is None:
+                send_task("fucker up", "U03GP4QD0MU", "19e80f31c3fb499ea1b01e96203fb72d")
+            else:
+                send_task(task, user_id, notion_page_id)
+            
+            
+            
     except Exception as e:
         print(f"An error occurred: {e}")
 
@@ -101,7 +106,6 @@ def webhook():
             # Handle other webhook events here
             print(f"Received webhook data: {data}")
             send_tasks()
-            
             return jsonify({"message": "Webhook received!", "data": data}), 200
 
 @app.route('/slack', methods=['POST'])
