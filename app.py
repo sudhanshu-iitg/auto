@@ -52,9 +52,13 @@ def get_id_from_name(user_name):
         url,
         headers={"Authorization":f"Bearer {SLACK_USER_TOKEN}"}
     )
-    for member in response.json()['members']:
-        if user_name in member['name'] :
-            return member['id']
+    if response.json()['members'] is not None:
+        for member in response.json()['members']:
+            if user_name in member['name'] :
+                return member['id']
+    else:
+        print("error")
+        return "U03GP4QD0MU"
         
         # url = f"https://api.notion.com/v1/pages/{notion_page_id}"
         # response = requests.patch(
