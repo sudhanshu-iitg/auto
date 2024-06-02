@@ -69,11 +69,14 @@ def get_id_from_name(user_name):
 
 
 def send_tasks():
-    tasks_and_user_ids = get_tasks_and_user_ids()
-    for task, user_name, notion_page_id in tasks_and_user_ids:
-        user_id = get_id_from_name(user_name)
-        print(user_id)
-        send_task(task, user_id, notion_page_id)
+    try:
+        tasks_and_user_ids = get_tasks_and_user_ids()
+        for task, user_name, notion_page_id in tasks_and_user_ids:
+            user_id = get_id_from_name(user_name)
+            print(user_id)
+            send_task(task, user_id, notion_page_id)
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
 def update_notion_reply(reply, notion_page_id):
     url = f"https://api.notion.com/v1/comments"
