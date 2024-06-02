@@ -55,19 +55,9 @@ def get_id_from_name(user_name):
     if response.json()['members'] is not None:
         for member in response.json()['members']:
             if user_name.lower() in member['name'].lower() :
-                send_task("f", "U03GP4QD0MU", "19e80f31c3fb499ea1b01e96203fb72d")
                 return member['id']
     else:
-        print("error")
-        send_task("f1", "U03GP4QD0MU", "19e80f31c3fb499ea1b01e96203fb72d")
         return "U03GP4QD0MU"
-        
-        # url = f"https://api.notion.com/v1/pages/{notion_page_id}"
-        # response = requests.patch(
-        #     url,
-        #     json={"properties": {"Reply": {"type": "rich_text", "rich_text": [{"text": {"content": task}}]}}},
-        #     headers=headers
-        # )
 
 
 def send_tasks():
@@ -79,7 +69,7 @@ def send_tasks():
                 send_task("really fucked up", "U03GP4QD0MU", "19e80f31c3fb499ea1b01e96203fb72d")
             else:
                 if user_id is None:
-                    send_task(f"fucker up {user_name}", "U03GP4QD0MU", "19e80f31c3fb499ea1b01e96203fb72d")
+                    send_task(f"Couldn't find the user -  {user_name}", "U03GP4QD0MU", "19e80f31c3fb499ea1b01e96203fb72d")
                 else:
                     send_task(task, user_id, notion_page_id)
             
