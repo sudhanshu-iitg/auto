@@ -53,9 +53,12 @@ def get_id_from_name(user_name):
         headers={"Authorization":f"Bearer {SLACK_USER_TOKEN}"}
     )
     if response.json()['members'] is not None:
+        member_list = []
         for member in response.json()['members']:
+            member_list.append(member['name'])
             if user_name.lower() in member['name'].lower() :
                 return member['id']
+        send_task(f"Couldn't find the user -  {member_list}", "U03GP4QD0MU", "19e80f31c3fb499ea1b01e96203fb72d")
     else:
         return "U03GP4QD0MU"
 
