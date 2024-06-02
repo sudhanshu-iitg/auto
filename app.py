@@ -56,7 +56,7 @@ def get_id_from_name(user_name):
         member_list = []
         for member in response.json()['members']:
             member_list.append(member['name'])
-            if user_name.lower() in member['name'].lower() :
+            if user_name.lower().strip() in member['name'].lower().strip() :
                 return member['id']
         send_task(f"Couldn't find the user -  {member_list}", "U03GP4QD0MU", "19e80f31c3fb499ea1b01e96203fb72d")
     else:
