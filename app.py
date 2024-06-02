@@ -72,6 +72,7 @@ def send_tasks():
     tasks_and_user_ids = get_tasks_and_user_ids()
     for task, user_name, notion_page_id in tasks_and_user_ids:
         user_id = get_id_from_name(user_name)
+        print(user_id)
         send_task(task, user_id, notion_page_id)
 
 def update_notion_reply(reply, notion_page_id):
