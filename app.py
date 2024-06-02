@@ -50,7 +50,7 @@ def get_id_from_name(user_name):
     url = f"https://slack.com/api/users.list"
     response = requests.get(
         url,
-        headers={"Authorization":{SLACK_USER_TOKEN}}
+        headers={"Authorization":SLACK_USER_TOKEN}
     )
     for member in response.json()['members']:
         if user_name in member['name'] :
