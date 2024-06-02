@@ -29,7 +29,7 @@ def get_tasks_and_user_ids():
         tasks_and_user_ids = [
             (
                 task["properties"]["Task"]["title"][0]["text"]["content"],
-                task["properties"]["Slack User IDs"]["rich_text"][0]["plain_text"],
+                task["properties"]['Task owner']['people'][0]['name'],
                 task["id"]
             )
             for task in data["results"]
@@ -65,7 +65,8 @@ def get_id_from_name(user_name):
 
 def send_tasks():
     tasks_and_user_ids = get_tasks_and_user_ids()
-    for task, user_id, notion_page_id in tasks_and_user_ids:
+    for task, user_name, notion_page_id in tasks_and_user_ids:
+        user_id = get_id_from_name(user_name)
         send_task(task, user_id, notion_page_id)
 
 def update_notion_reply(reply, notion_page_id):
