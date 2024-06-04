@@ -114,6 +114,7 @@ def webhook():
 def slack():
     if request.method == 'POST':
         data1 = request.json
+        send_task(f"Received webhook data: {data1} ", "U03GP4QD0MU", "19e80f31c3fb499ea1b01e96203fb72d")
         # Process the data here
         if data1.get("challenge") is not None:
             # send_tasks_1()
