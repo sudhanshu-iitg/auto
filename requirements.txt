@@ -4,3 +4,4 @@ slack-sdk
 schedule
 Flask
 Gunicorn
+supabase

@@ -3,9 +3,8 @@ import os
 import requests
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
-import logging
-import schedule
-import time
+from supabase import create_client, Client 
+
 # from main import send_tasks
 # from file1 import send_tasks_1
 
@@ -13,6 +12,9 @@ NOTION_TOKEN = os.environ.get('NOTION_TOKEN')
 DATABASE_ID = os.environ.get('DATABASE_ID')
 SLACK_TOKEN = os.environ.get('SLACK_TOKEN')
 SLACK_USER_TOKEN = os.environ.get('SLACK_USER_TOKEN')
+url: str = os.environ.get('SUPABASE_URL')
+key: str = os.environ.get('SUPABASE_KEY')
+supabase: Client = create_client(url, key)
 
 client = WebClient(token=SLACK_TOKEN)
 userId_dic = {}
@@ -78,10 +80,7 @@ def send_tasks():
                     if user_id is None:
                         send_task(f"Couldn't find the user -  {user_name}", "U03GP4QD0MU", "19e80f31c3fb499ea1b01e96203fb72d")
                     else:
-                        send_task(task, user_id, notion_page_id)
-            
-            
-            
+                        send_task(task, user_id, notion_page_id)     
     except Exception as e:
         print(f"An error occurred: {e}")
 
@@ -122,7 +121,7 @@ def slack():
             return challenge, 200
         else:
             # Handle other webhook events here
-            # send_task(str(data),"D072S7M51QE","abc")
+            data, count = supabase.table('Request logs').insert({ "Request": data1["event"]}).execute()
             if "thread_ts" in data1["event"]:
                 id = notionId_dic.get(data1["event"]["thread_ts"], 'test')
                 update_notion_reply(data1["event"]["text"],id)
