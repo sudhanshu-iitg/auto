@@ -45,8 +45,8 @@ def get_tasks_and_user_ids():
         # logger.error(f"Error fetching data from Notion API: {response.text}")
         return []
     
-def send_task(task, user_id, notion_page_id):
-    result = client.chat_postMessage(channel=user_id, text=task)
+def send_task(task, user_id, notion_page_id,user_name):
+    result = client.chat_postMessage(channel=user_id, text=f"Good evening, {user_name}! Could you please provide an update on the progress of {task} today? Thank you!")
     userId_dic[task] = result["message"]["ts"]
     channelId_dic[user_id] = result["channel"]
     notionId_dic[result["message"]["ts"]] = notion_page_id
@@ -63,7 +63,7 @@ def get_id_from_name(user_name):
             member_list.append(member['name'])
             if user_name.lower().strip() in member['name'].lower().strip() :
                 return member['id']
-        send_task(f"Couldn't find the user -  {member_list}", "U03GP4QD0MU", "19e80f31c3fb499ea1b01e96203fb72d")
+        send_task(f"Couldn't find the user -  {member_list}", "U03GP4QD0MU", "19e80f31c3fb499ea1b01e96203fb72d",'sid')
     else:
         return "U03GP4QD0MU"
 
@@ -75,12 +75,12 @@ def send_tasks():
             if status == 'in progress':
                 user_id = get_id_from_name(user_name)
                 if user_name is None:
-                    send_task("really fucked up", "U03GP4QD0MU", "19e80f31c3fb499ea1b01e96203fb72d")
+                    send_task("really fucked up", "U03GP4QD0MU", "19e80f31c3fb499ea1b01e96203fb72d",'sid')
                 else:
                     if user_id is None:
-                        send_task(f"Couldn't find the user -  {user_name}", "U03GP4QD0MU", "19e80f31c3fb499ea1b01e96203fb72d")
+                        send_task(f"Couldn't find the user -  {user_name}", "U03GP4QD0MU", "19e80f31c3fb499ea1b01e96203fb72d",'sid')
                     else:
-                        send_task(task, user_id, notion_page_id)     
+                        send_task(task, user_id, notion_page_id,user_name)     
     except Exception as e:
         print(f"An error occurred: {e}")
 
