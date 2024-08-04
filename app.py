@@ -132,10 +132,9 @@ def slack():
 @app.route('/search', methods=['GET'])
 def search():
     if request.method == 'GET':
-        data1 = request.json
-        if data1.get("key") is not None:
+        key = request.args.get("key")
+        if key is not None:
             # send_tasks_1()
-            key = data1.get("key")
             s = LibgenSearch()
             results = s.search_title(key)
             count = 0
@@ -148,10 +147,7 @@ def search():
             return jsonify({"message": "returned successfully!", "docs": new_results}), 200
             # return challenge, 200
         else:
-            # Handle other webhook events here
-            
-            
-            return jsonify({"message": "Webhook received !"}), 200
+            return jsonify({"message": "Missing 'key' parameter"}), 400 
         
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
