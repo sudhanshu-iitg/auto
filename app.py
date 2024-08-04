@@ -149,13 +149,9 @@ def search():
             # return challenge, 200
         else:
             # Handle other webhook events here
-            data, count = supabase.table('Request logs').insert({ "Request": data1["event"]}).execute()
-            if "thread_ts" in data1["event"]:
-                id = notionId_dic.get(data1["event"]["thread_ts"], 'test')
-                update_notion_reply(data1["event"]["text"],id)
-            # response = requests.post("https://smee.io/xK7FU4adUFN3EO8", data={"body":str(data1),"id":id })
             
-            return jsonify({"message": "Webhook received !", "data": data1}), 200
+            
+            return jsonify({"message": "Webhook received !"}), 200
         
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
