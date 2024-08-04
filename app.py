@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS  # Import CORS
 import os
 import requests
 from slack_sdk import WebClient
@@ -94,7 +95,7 @@ def update_notion_reply(reply, notion_page_id):
     
 
 app = Flask(__name__)
-
+CORS(app, resources={r"/search*": {"origins": "http://localhost:3000"}}) 
 @app.route('/webhook', methods=['POST'])
 def webhook():
     if request.method == 'POST':

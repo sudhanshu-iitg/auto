@@ -6,3 +6,4 @@ Flask
 Gunicorn
 supabase
 libgen_api
+Flask-CORS
