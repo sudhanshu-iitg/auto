@@ -4,7 +4,7 @@ import requests
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 from supabase import create_client, Client 
-
+from libgen_api import LibgenSearch
 # from main import send_tasks
 # from file1 import send_tasks_1
 
@@ -128,6 +128,35 @@ def slack():
             # response = requests.post("https://smee.io/xK7FU4adUFN3EO8", data={"body":str(data1),"id":id })
             
             return jsonify({"message": "Webhook received !", "data": data1}), 200
+
+@app.route('/search', methods=['GET'])
+def search():
+    if request.method == 'GET':
+        data1 = request.json
+        if data1.get("key") is not None:
+            # send_tasks_1()
+            key = data1.get("key")
+            s = LibgenSearch()
+            results = s.search_title(key)
+            count = 0
+            new_results = []
+            for result in results:
+                new_results.append(result)
+                count += 1
+                if count >= 10:
+                    break
+            return jsonify({"message": "returned successfully!", "docs": new_results}), 200
+            # return challenge, 200
+        else:
+            # Handle other webhook events here
+            data, count = supabase.table('Request logs').insert({ "Request": data1["event"]}).execute()
+            if "thread_ts" in data1["event"]:
+                id = notionId_dic.get(data1["event"]["thread_ts"], 'test')
+                update_notion_reply(data1["event"]["text"],id)
+            # response = requests.post("https://smee.io/xK7FU4adUFN3EO8", data={"body":str(data1),"id":id })
+            
+            return jsonify({"message": "Webhook received !", "data": data1}), 200
+        
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
