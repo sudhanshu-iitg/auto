@@ -140,6 +140,8 @@ def search():
             count = 0
             new_results = []
             for result in results:
+                download_links = s.resolve_download_links(result)
+                result["download_links"] = download_links
                 new_results.append(result)
                 count += 1
                 if count >= 10:
