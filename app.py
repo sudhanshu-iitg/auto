@@ -95,7 +95,7 @@ def update_notion_reply(reply, notion_page_id):
     
 
 app = Flask(__name__)
-CORS(app, resources={r"/search*": {"origins": "http://localhost:3000"}}) 
+CORS(app, resources={r"/search*": {"origins": ["http://localhost:3000", "https://the-book-app2.onrender.com"]}})
 @app.route('/webhook', methods=['POST'])
 def webhook():
     if request.method == 'POST':
