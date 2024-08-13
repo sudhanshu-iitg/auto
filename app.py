@@ -186,7 +186,10 @@ def store():
                 try:
                     
                         MIRROR_SOURCES = ["GET"]
-                        page = requests.get(key)
+                        headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+}
+                        page = requests.get(key, headers=headers)
                         
                         if page.status_code != 200:
                             raise Exception(f"Failed to fetch the page. Status code: {page} {key}")
