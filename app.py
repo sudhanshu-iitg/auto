@@ -189,7 +189,8 @@ def store():
                         page = requests.get(key)
                         
                         if page.status_code != 200:
-                            raise Exception(f"Failed to fetch the page. Status code: {page.status_code}")
+                            raise Exception(f"Failed to fetch the page. Status code: {page} {key}")
+                        
 
                         soup = BeautifulSoup(page.text, "html.parser")
                         links = soup.find_all("a", string=MIRROR_SOURCES)
