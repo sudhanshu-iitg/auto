@@ -8,6 +8,7 @@ from supabase import create_client, Client
 from libgen_api import LibgenSearch
 from bs4 import BeautifulSoup
 from requests.exceptions import ChunkedEncodingError, ConnectionError
+import time
 # from main import send_tasks
 # from file1 import send_tasks_1
 
@@ -165,7 +166,7 @@ def search():
             count = 0
             new_results = []
             for result in results:
-                if result['Extension'] is 'epub':
+                if result['Extension'] == 'epub':
                     result["download_links"] = result['Mirror_2']
                     new_results.append(result)
                     count += 1
@@ -180,21 +181,48 @@ def store():
     if request.method == 'GET':
         key = request.args.get("key")
         if key is not None:
-            # send_tasks_1()
-            MIRROR_SOURCES = ["GET"]
-            page = requests.get(key)
-            soup = BeautifulSoup(page.text, "html.parser")
-# print(soup)
-            links = soup.find_all("a", string=MIRROR_SOURCES)
-            download_links = {link.string: link["href"] for link in links}
-            links = soup.find_all("a", string=MIRROR_SOURCES)
-            download_links = {link.string: link["href"] for link in links}
-            final_links = 'http://libgen.li'+ download_links['GET']
-            download_pdf(final_links, 'test.pdf')
-            return jsonify({"message": "returned successfully!"}), 200
-            # return challenge, 200
-        else:
-            return jsonify({"message": "Missing 'key' parameter"}), 400 
+            retries=5
+            for attempt in range(retries):
+                try:
+                    
+                        MIRROR_SOURCES = ["GET"]
+                        page = requests.get(key)
+                        
+                        if page.status_code != 200:
+                            raise Exception(f"Failed to fetch the page. Status code: {page.status_code}")
+
+                        soup = BeautifulSoup(page.text, "html.parser")
+                        links = soup.find_all("a", string=MIRROR_SOURCES)
+                        
+                        if not links:
+                            raise Exception("No links found with the specified string.")
+
+                        download_links = {link.string: link["href"] for link in links}
+                        
+                        if 'GET' in download_links:
+                            final_links = 'http://libgen.li/' + download_links['GET']
+                            print(final_links)
+                            download_pdf(final_links, "book2.epub")
+                        else: 
+                            print("download links are not available")
+                            print(soup)
+
+                        return jsonify({"message": "returned successfully!"}), 200
+
+                    
+
+                except Exception as e:
+                    print(f"Attempt {attempt + 1} failed: {e}")
+                    if attempt < retries - 1:
+                        print("Retrying...")
+                        time.sleep(2)  # Optional: Wait before retrying
+                    else:
+                        return jsonify({"All retries failed. Exiting."}), 400 
+                        
+                    # return challenge, 200
+    else:
+        return jsonify({"Wrong method detected. Exiting."}), 400
+                
 
 # @app.route('/summarize', methods=['GET'])
 # def summarize():
