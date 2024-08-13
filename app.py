@@ -6,6 +6,8 @@ from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 from supabase import create_client, Client 
 from libgen_api import LibgenSearch
+from bs4 import BeautifulSoup
+from requests.exceptions import ChunkedEncodingError, ConnectionError
 # from main import send_tasks
 # from file1 import send_tasks_1
 
@@ -92,7 +94,29 @@ def update_notion_reply(reply, notion_page_id):
         json={"parent": {"page_id": notion_page_id },"rich_text": [
         {"text": {"content": reply}}]},headers=headers
     )
-    
+
+def download_pdf(url, save_path, max_retries=3):
+    # Attempt to download with retries
+    for attempt in range(max_retries):
+        try:
+            # Send GET request with stream=True to download in chunks
+            response = requests.get(url, stream=True)
+            response.raise_for_status()  # Raise an exception for HTTP errors
+
+            # Open the file in write-binary mode
+            with open(save_path, 'wb') as file:
+                # Write the content in chunks to avoid large memory usage
+                for chunk in response.iter_content(chunk_size=1024):
+                    if chunk:
+                        file.write(chunk)
+            print(f"PDF downloaded successfully and saved to {save_path}")
+            break  # Exit the loop if the download was successful
+        except (ChunkedEncodingError, ConnectionError) as e:
+            print(f"Attempt {attempt + 1} failed with error: {e}")
+            if attempt + 1 == max_retries:
+                print("Max retries reached. Failed to download PDF.")
+            else:
+                print("Retrying...")   
 
 app = Flask(__name__)
 CORS(app, resources={r"/search*": {"origins": ["http://localhost:3000", "https://the-book-app2.onrender.com"]}})
@@ -141,17 +165,57 @@ def search():
             count = 0
             new_results = []
             for result in results:
-                download_links = s.resolve_download_links(result)
-                result["download_links"] = download_links
-                new_results.append(result)
-                count += 1
-                if count >= 10:
-                    break
+                if result['Extension'] is 'epub':
+                    result["download_links"] = result['Mirror_2']
+                    new_results.append(result)
+                    count += 1
+                    if count >= 10:
+                        break
             return jsonify({"message": "returned successfully!", "docs": new_results}), 200
             # return challenge, 200
         else:
             return jsonify({"message": "Missing 'key' parameter"}), 400 
-        
+@app.route('/store', methods=['GET'])
+def store():
+    if request.method == 'GET':
+        key = request.args.get("key")
+        if key is not None:
+            # send_tasks_1()
+            MIRROR_SOURCES = ["GET"]
+            page = requests.get(key)
+            soup = BeautifulSoup(page.text, "html.parser")
+# print(soup)
+            links = soup.find_all("a", string=MIRROR_SOURCES)
+            download_links = {link.string: link["href"] for link in links}
+            links = soup.find_all("a", string=MIRROR_SOURCES)
+            download_links = {link.string: link["href"] for link in links}
+            final_links = 'http://libgen.li'+ download_links['GET']
+            download_pdf(final_links, 'test.pdf')
+            return jsonify({"message": "returned successfully!"}), 200
+            # return challenge, 200
+        else:
+            return jsonify({"message": "Missing 'key' parameter"}), 400 
+
+# @app.route('/summarize', methods=['GET'])
+# def summarize():
+#     if request.method == 'GET':
+#         key = request.args.get("key")
+#         if key is not None:
+#             # send_tasks_1()
+#             MIRROR_SOURCES = ["GET"]
+#             page = requests.get(key)
+#             soup = BeautifulSoup(page.text, "html.parser")
+# # print(soup)
+#             links = soup.find_all("a", string=MIRROR_SOURCES)
+#             download_links = {link.string: link["href"] for link in links}
+#             links = soup.find_all("a", string=MIRROR_SOURCES)
+#             download_links = {link.string: link["href"] for link in links}
+#             final_links = 'http://libgen.li'+ download_links['GET']
+#             return jsonify({"message": "returned successfully!", "docs": new_results}), 200
+#             # return challenge, 200
+#         else:
+#             return jsonify({"message": "Missing 'key' parameter"}), 400 
+
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
