@@ -7,3 +7,5 @@ Gunicorn
 supabase
 libgen_api
 Flask-CORS
+ebooklib
+bs4

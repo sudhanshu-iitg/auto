@@ -11,7 +11,6 @@ from requests.exceptions import ChunkedEncodingError, ConnectionError
 import time
 import requests
 from requests.exceptions import ChunkedEncodingError, ConnectionError
-from bs4 import BeautifulSoup
 import json
 import io
 import ebooklib
