@@ -9,6 +9,15 @@ from libgen_api import LibgenSearch
 from bs4 import BeautifulSoup
 from requests.exceptions import ChunkedEncodingError, ConnectionError
 import time
+import requests
+from requests.exceptions import ChunkedEncodingError, ConnectionError
+from bs4 import BeautifulSoup
+import json
+import io
+import ebooklib
+from ebooklib import epub
+import google.generativeai as genai
+import tempfile
 # from main import send_tasks
 # from file1 import send_tasks_1
 
@@ -19,7 +28,7 @@ SLACK_USER_TOKEN = os.environ.get('SLACK_USER_TOKEN')
 url: str = os.environ.get('SUPABASE_URL')
 key: str = os.environ.get('SUPABASE_KEY')
 supabase: Client = create_client(url, key)
-
+my_api_key = os.environ.get('GEMINI_KEY')
 client = WebClient(token=SLACK_TOKEN)
 userId_dic = {}
 channelId_dic = {}
@@ -29,6 +38,203 @@ headers = {
     "Content-Type": "application/json",
     "Notion-Version": "2022-06-28",
 }
+def download_epub(url, max_retries=5):
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, stream=True)
+            response.raise_for_status()
+            return response.content
+        except (ChunkedEncodingError, ConnectionError) as e:
+            print(f"Attempt {attempt + 1} failed with error: {e}")
+            if attempt + 1 == max_retries:
+                print("Max retries reached. Failed to download EPUB.")
+            else:
+                print("Retrying...")
+    return None
+
+def get_download_link(key, retries=5):
+    for attempt in range(retries):
+        try:
+            page = requests.get(key)
+            if page.status_code != 200:
+                raise Exception(f"Failed to fetch the page. Status code: {page.status_code}")
+
+            soup = BeautifulSoup(page.text, "html.parser")
+            links = soup.find_all("a", string="GET")
+            
+            if not links:
+                raise Exception("No links found with the specified string.")
+
+            download_links = {link.string: link["href"] for link in links}
+            
+            if 'GET' in download_links:
+                return 'http://libgen.li/' + download_links['GET']
+            else:
+                print("Download links are not available")
+                return None
+
+        except Exception as e:
+            print(f"Attempt {attempt + 1} failed: {e}")
+            if attempt < retries - 1:
+                print("Retrying...")
+                time.sleep(2)
+            else:
+                print("All retries failed. Exiting.")
+                return None
+
+def extract_text(html_content):
+    soup = BeautifulSoup(html_content, 'html.parser')
+    return soup.get_text()
+
+def process_epub(epub_path, min_chapter_length=2200):
+    book = epub.read_epub(epub_path)
+    chapters = []
+
+    for item in book.get_items():
+        if item.get_type() == ebooklib.ITEM_DOCUMENT:
+            chapter_title = item.get_name()
+            chapter_content = extract_text(item.get_content())
+            
+            if len(chapter_content) >= min_chapter_length:
+                chapters.append((chapter_title, chapter_content))
+            else:
+                print(f"Skipping short content: {chapter_title} ({len(chapter_content)} characters)")
+
+    return chapters
+
+def call_gemini(contents, api_key):
+    genai.configure(api_key=api_key)
+    generation_config = {
+        "temperature": 0,
+        "max_output_tokens": 800,
+        "response_mime_type": "text/plain"
+    }
+    model = genai.GenerativeModel(
+        model_name="models/gemini-1.5-flash",
+        generation_config=generation_config,
+        system_instruction="You are a helpful assistant who executes given tasks accurately."
+    )
+    response = model.generate_content(contents)
+    
+    try:
+        return response.text
+    except:
+        print(response)
+        return None
+
+def extract_chapter_info(json_string):
+    try:
+        data = json.loads(json_string)
+        chapter_title = data['chapter_title']
+        summary = data['summary']
+        return chapter_title, summary
+    except (json.JSONDecodeError, KeyError) as e:
+        print(f"Error extracting chapter info: {e}")
+        return None, None
+
+def summarize_chapter(chapter_title, chapter_content):
+    prompt = f'''Please summarize the chapter titled "{chapter_title}" in an engaging and concise manner. Focus on capturing the essence of the chapter, highlighting the most impactful moments, key concepts, and any notable developments. The goal is to create a summary that not only informs the reader but also draws them in, making the key takeaways clear and memorable.
+
+After summarizing, suggest a compelling chapter title that encapsulates the main theme or focus of the chapter, aligning with the summary provided.
+
+The chapter content is as follows:
+
+{chapter_content[:4000]}  # Limit content to avoid exceeding token limits
+
+Provide the output in the following JSON format:
+
+  {{"chapter_title": "Suggested Chapter Title",
+  "summary": "Summary of the chapter"}}
+'''
+    contents = [prompt]
+    return call_gemini(contents, my_api_key)
+
+def download_and_summarize(url, api_key,book_id):
+    # Get the download link
+    download_link = get_download_link(url)
+    if not download_link:
+        return "Failed to get download link"
+
+    # Download the EPUB file
+    epub_content = download_epub(download_link)
+    if not epub_content:
+        return "Failed to download EPUB"
+
+    # Process the EPUB content
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.epub') as temp_file:
+            temp_file.write(epub_content)
+            temp_file_path = temp_file.name
+
+        extracted_chapters = process_epub(temp_file_path)
+    except Exception as e:
+        return f"Failed to process EPUB: {str(e)}"
+    finally:
+        if 'temp_file_path' in locals():
+            os.unlink(temp_file_path)
+
+    # Summarize chapters
+    summaries = {}
+    for chapter_title, chapter_content in extracted_chapters:
+        print(f"Summarizing chapter: {chapter_title}")
+        summary = summarize_chapter(chapter_title, chapter_content)
+        if summary:
+            summary = summary.replace('```json\n', "").replace('\n```', "")
+            new_chapter_title, new_summary = extract_chapter_info(summary)
+            if new_chapter_title and new_summary:
+                print(f"Summarizing complete: {new_chapter_title}")
+                summaries[new_chapter_title] = new_summary
+                chapter_id = get_or_create_chapter(book_id, new_chapter_title, chapter_content)
+        time.sleep(2)  # To avoid hitting API rate limits
+    summary_id = update_or_create_summary(book_id, summaries)
+    return summaries
+
+def get_or_create_category(category_name):
+    # Check if category exists
+    response = supabase.table("categories").select("id").eq("name", category_name).execute()
+    if response.data:
+        return response.data[0]['id']
+    
+    # If not, create new category
+    insert_response = supabase.table("categories").insert({"name": category_name}).execute()
+    return insert_response.data[0]['id'] if insert_response.data else None
+def get_or_create_book(title, category_id,author):
+    response = supabase.table("books").select("Id").eq("Title", title).eq("category_id", category_id).execute()
+    if response.data:
+        return response.data[0]['Id'], True  # Return True if book already exists
+    
+    insert_response = supabase.table("books").insert({"Title": title, "category_id": category_id,'Author':author}).execute()
+    if insert_response.data:
+        return insert_response.data[0]['Id'], False
+    else:
+        return None, False
+def get_or_create_chapter(book_id, title, content):
+    # Check if chapter exists
+    response = supabase.table("chapter_contents").select("id").eq("book_id", book_id).eq("chapter_title", title).execute()
+    if response.data:
+        return response.data[0]['id']
+    
+    # If not, create new chapter
+    insert_response = supabase.table("chapter_contents").insert({
+        "book_id": book_id,
+        "chapter_title": title,
+        "content": content
+    }).execute()
+    return insert_response.data[0]['id'] if insert_response.data else None
+def update_or_create_summary(book_id, summary):
+    # Check if summary exists
+    response = supabase.table("summaries").select("id").eq("book_id", book_id).execute()
+    if response.data:
+        # Update existing summary
+        update_response = supabase.table("summaries").update({"content": summary}).eq("id", response.data[0]['id']).execute()
+        return update_response.data[0]['id'] if update_response.data else None
+    
+    # If not, create new summary
+    insert_response = supabase.table("summaries").insert({
+        "book_id": book_id,
+        "content": summary
+    }).execute()
+    return insert_response.data[0]['id'] if insert_response.data else None
 
 def get_tasks_and_user_ids():
     url = f"https://api.notion.com/v1/databases/{DATABASE_ID}/query"
@@ -179,78 +385,53 @@ def search():
 @app.route('/store', methods=['GET'])
 def store():
     if request.method == 'GET':
-        key = request.args.get("key")
-        if key is not None:
-            retries=5
-            for attempt in range(retries):
-                try:
-                    
-                        MIRROR_SOURCES = ["GET"]
-                        headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-}
-                        page = requests.get(key, headers=headers)
-                        
-                        if page.status_code != 200:
-                            raise Exception(f"Failed to fetch the page. Status code: {page} {key}")
-                        
+        try:
+            key = request.args.get("key")
+            if key is None:
+                return jsonify({"error": "Missing 'key' parameter"}), 400
 
-                        soup = BeautifulSoup(page.text, "html.parser")
-                        links = soup.find_all("a", string=MIRROR_SOURCES)
-                        
-                        if not links:
-                            raise Exception("No links found with the specified string.")
+            url = request.args.get("url")
+            if url is None:
+                return jsonify({"error": "Missing 'url' parameter"}), 400
 
-                        download_links = {link.string: link["href"] for link in links}
-                        
-                        if 'GET' in download_links:
-                            final_links = 'http://libgen.li/' + download_links['GET']
-                            print(final_links)
-                            download_pdf(final_links, "book2.epub")
-                        else: 
-                            print("download links are not available")
-                            print(soup)
+            book_title = request.args.get("title")
+            if book_title is None:
+                return jsonify({"error": "Missing 'title' parameter"}), 400
 
-                        return jsonify({"message": "returned successfully!"}), 200
+            author = request.args.get("author")
+            if author is None:
+                return jsonify({"error": "Missing 'author' parameter"}), 400
 
-                    
+            my_api_key = os.environ.get('GEMINI_KEY')
+            if my_api_key is None:
+                return jsonify({"error": "GEMINI_KEY environment variable is not set"}), 500
 
-                except Exception as e:
-                    print(f"Attempt {attempt + 1} failed: {e}")
-                    if attempt < retries - 1:
-                        print("Retrying...")
-                        time.sleep(2)  # Optional: Wait before retrying
-                    else:
-                        return jsonify({"All retries failed. Exiting."}), 400 
-                        
-                    # return challenge, 200
-    else:
-        return jsonify({"Wrong method detected. Exiting."}), 400
-                
+            book_category = 'New'
+            category_id = get_or_create_category(book_category)
+            if category_id is None:
+                return jsonify({"error": "Failed to create or get category"}), 500
 
-# @app.route('/summarize', methods=['GET'])
-# def summarize():
-#     if request.method == 'GET':
-#         key = request.args.get("key")
-#         if key is not None:
-#             # send_tasks_1()
-#             MIRROR_SOURCES = ["GET"]
-#             page = requests.get(key)
-#             soup = BeautifulSoup(page.text, "html.parser")
-# # print(soup)
-#             links = soup.find_all("a", string=MIRROR_SOURCES)
-#             download_links = {link.string: link["href"] for link in links}
-#             links = soup.find_all("a", string=MIRROR_SOURCES)
-#             download_links = {link.string: link["href"] for link in links}
-#             final_links = 'http://libgen.li'+ download_links['GET']
-#             return jsonify({"message": "returned successfully!", "docs": new_results}), 200
-#             # return challenge, 200
-#         else:
-#             return jsonify({"message": "Missing 'key' parameter"}), 400 
+            book_id, book_exists = get_or_create_book(book_title, category_id, author)
+            if book_id is None:
+                return jsonify({"error": "Failed to create or get book"}), 500
+
+            if book_exists:
+                return jsonify({"message": "Book already exists", "book_id": book_id}), 200
+
+            result = download_and_summarize(url, my_api_key, book_id)
+            if result is None:
+                return jsonify({"error": "Failed to download and summarize the book"}), 500
+
+            return jsonify({"message": "Book processed successfully", "book_id": book_id, "summary": result}), 200
+
+        except Exception as e:
+            return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
+
+    return jsonify({"error": "Method not allowed"}), 405
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port,debug=False)
 
 # Schedule the send_tasks function to run at 11:10 every day
 # schedule.every().day.at("23:30").do(send_tasks)
