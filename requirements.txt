@@ -9,3 +9,4 @@ libgen_api
 Flask-CORS
 ebooklib
 bs4
+google-generativeai
