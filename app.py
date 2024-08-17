@@ -109,7 +109,7 @@ def call_gemini(contents, api_key):
         "response_mime_type": "text/plain"
     }
     model = genai.GenerativeModel(
-        model_name="models/gemini-1.5-flash",
+        model_name="models/gemini-1.5-pro",
         generation_config=generation_config,
         system_instruction="You are a helpful assistant who executes given tasks accurately."
     )
